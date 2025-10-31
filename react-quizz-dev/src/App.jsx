@@ -12,6 +12,10 @@ function GameBoard() {
   return <p>Lorem</p>;
 }
 
+function Card() {
+  return <p>Lorem</p>;
+}
+
 function App() {
   const [count, setCount] = useState(0)
 
