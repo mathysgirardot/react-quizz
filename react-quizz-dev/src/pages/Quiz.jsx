@@ -11,6 +11,8 @@
 // - Mise à jour du score lorsque l'utilisateur clique sur une réponse
 // - Redirection vers la page des résultats à la fin du quiz
 // - Gestion d'un état de chargement et d'une erreur simple
+// - Ajout d'un "joker" utilisable une seule fois par partie
+//   -> le joker réduit le nombre de réponses possibles pour la question en cours
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -60,6 +62,13 @@ function Quiz() {
   // Message d'erreur éventuel (par exemple si l'API ne répond pas)
   const [error, setError] = useState(null)
 
+  // Indique si le joker a déjà été utilisé pendant cette partie
+  const [hasUsedJoker, setHasUsedJoker] = useState(false)
+
+  // Réponses actuellement affichées pour la question en cours.
+  // Ce tableau peut être réduit si l'utilisateur utilise le joker.
+  const [currentAnswers, setCurrentAnswers] = useState([])
+
   // Effet exécuté au montage du composant et lorsque la catégorie change
   useEffect(() => {
     async function loadQuestions() {
@@ -83,6 +92,7 @@ function Quiz() {
         setQuestions(loadedQuestions)
         setCurrentQuestionIndex(0)
         setScore(0)
+        setHasUsedJoker(false)
       } catch (err) {
         console.error('Erreur lors du chargement des questions :', err)
         setError("Impossible de charger les questions. Merci de réessayer plus tard.")
@@ -96,6 +106,16 @@ function Quiz() {
 
   // Question actuelle (peut être undefined si le tableau est vide)
   const currentQuestion = questions[currentQuestionIndex]
+
+  // À chaque fois que la question actuelle change, on réinitialise
+  // la liste des réponses affichées à la liste complète fournie par l'API.
+  useEffect(() => {
+    if (currentQuestion) {
+      setCurrentAnswers(currentQuestion.answers)
+    } else {
+      setCurrentAnswers([])
+    }
+  }, [currentQuestion])
 
   // Fonction appelée lorsque l'utilisateur clique sur une réponse
   const handleAnswerClick = (selectedAnswer) => {
@@ -137,13 +157,55 @@ function Quiz() {
     }
   }
 
+  // Fonction appelée lorsque l'utilisateur clique sur le bouton "Utiliser mon joker"
+  // Le joker est utilisable une seule fois dans la partie.
+  // Ici, il réduit le nombre de réponses possibles pour la question en cours
+  // (on garde la bonne réponse + une mauvaise réponse au hasard).
+  const handleUseJoker = () => {
+    if (!currentQuestion) {
+      return
+    }
+
+    if (hasUsedJoker) {
+      // Si le joker a déjà été utilisé, on ne fait rien.
+      return
+    }
+
+    // On sépare la bonne réponse des mauvaises réponses
+    const correctAnswer = currentQuestion.correctAnswer
+    const incorrectAnswers = currentQuestion.answers.filter(
+      (answer) => answer !== correctAnswer,
+    )
+
+    if (incorrectAnswers.length === 0) {
+      // Cas très rare (si l'API renvoie une seule réponse),
+      // on ne modifie pas la liste actuelle.
+      return
+    }
+
+    // On choisit une mauvaise réponse au hasard
+    const randomIndex = Math.floor(Math.random() * incorrectAnswers.length)
+    const randomIncorrectAnswer = incorrectAnswers[randomIndex]
+
+    // On construit une nouvelle liste de réponses
+    // en conservant uniquement la bonne réponse + la mauvaise tirée au sort.
+    // On respecte l'ordre d'apparition actuel des réponses.
+    const reducedAnswers = currentAnswers.filter(
+      (answer) =>
+        answer === correctAnswer || answer === randomIncorrectAnswer,
+    )
+
+    setCurrentAnswers(reducedAnswers)
+    setHasUsedJoker(true)
+  }
+
   return (
     <div className="quiz-page">
       {/* Header commun à plusieurs pages */}
       <Header />
 
       <main className="quiz">
-        <h2>Quiz React (version API avec catégories)</h2>
+        <h2>Quiz React (version API avec catégories et joker)</h2>
 
         {/* Affichage du thème actuel pour donner un contexte à l'utilisateur */}
         <p className="quiz__category">
@@ -166,28 +228,51 @@ function Quiz() {
 
         {/* Affichage du contenu du quiz uniquement si les questions sont chargées,
             qu'il n'y a pas d'erreur et que le tableau n'est pas vide. */}
-        {!isLoading && !error && questions.length > 0 && currentQuestion && (
-          <>
-            {/* Information de progression simple */}
-            <p className="quiz__progress">
-              Question {currentQuestionIndex + 1} / {questions.length}
-            </p>
+        {!isLoading
+          && !error
+          && questions.length > 0
+          && currentQuestion
+          && currentAnswers.length > 0 && (
+            <>
+              {/* Information de progression simple */}
+              <p className="quiz__progress">
+                Question {currentQuestionIndex + 1} / {questions.length}
+              </p>
 
-            {/* Affichage de la question actuelle */}
-            <Question
-              questionText={currentQuestion.questionText}
-              answers={currentQuestion.answers}
-              onAnswerClick={handleAnswerClick}
-            />
+              {/* Affichage de la question actuelle avec la liste de réponses courante
+                  (qui peut être réduite si le joker a été utilisé). */}
+              <Question
+                questionText={currentQuestion.questionText}
+                answers={currentAnswers}
+                onAnswerClick={handleAnswerClick}
+              />
 
-            {/* Texte d'information temporaire pour expliquer l'état du développement */}
-            <p className="quiz__info">
-              Les questions affichées sont maintenant filtrées en fonction de la
-              catégorie choisie sur la page d&apos;accueil. Dans les prochains
-              commits, nous ajouterons le joker, le minuteur par question et un
-              meilleur feedback visuel pour les bonnes/mauvaises réponses.
-            </p>
-          </>
+              {/* Section dédiée au joker */}
+              <section className="quiz__joker">
+                <h3>Joker</h3>
+                <p className="quiz__joker-text">
+                  Tu peux utiliser ton joker une seule fois dans la partie.
+                  Il réduit le nombre de réponses possibles pour la question actuelle.
+                </p>
+
+                <button
+                  className="quiz__joker-button"
+                  onClick={handleUseJoker}
+                  disabled={hasUsedJoker}
+                >
+                  {hasUsedJoker ? 'Joker déjà utilisé' : 'Utiliser mon joker'}
+                </button>
+              </section>
+
+              {/* Texte d'information temporaire pour expliquer l'état du développement */}
+              <p className="quiz__info">
+                Les questions affichées sont filtrées en fonction de la
+                catégorie choisie sur la page d&apos;accueil. Tu disposes
+                d&apos;un joker par partie pour t&apos;aider. Dans les prochains
+                commits, nous ajouterons le minuteur par question et un
+                meilleur feedback visuel pour les bonnes/mauvaises réponses.
+              </p>
+            </>
         )}
 
         {/* Cas où l'API renvoie 0 question (peu probable mais géré proprement) */}
