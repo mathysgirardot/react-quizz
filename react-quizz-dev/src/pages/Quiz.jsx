@@ -1,10 +1,11 @@
 // src/pages/Quiz.jsx
 // Page principale du quiz.
-// Pour l'instant, les questions sont codées "en dur" dans un tableau local.
-// Objectif : afficher une question à la fois et passer à la suivante
-// lorsqu'on clique sur une réponse.
+// Dans cette version, les questions sont codées "en dur" dans un tableau local.
+// On affiche une question à la fois et on met à jour le score
+// lorsqu'on clique sur une réponse. À la fin, on redirige vers la page des résultats.
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import Question from '../components/Question.jsx'
 
@@ -36,12 +37,18 @@ const QUESTIONS = [
   },
 ]
 
-// Note : pour l’instant, on n’utilise pas encore la propriété correctAnswer.
-// On s’en servira plus tard pour calculer le score.
+// Note : plus tard, nous pourrons déplacer ce tableau dans un fichier séparé
+// ou le remplacer entièrement par des données récupérées depuis une API.
 
 function Quiz() {
   // Index de la question actuellement affichée (0 = première question)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+
+  // Score actuel de l'utilisateur (nombre de bonnes réponses)
+  const [score, setScore] = useState(0)
+
+  // Hook de navigation fourni par React Router
+  const navigate = useNavigate()
 
   // Récupère la question actuelle à partir du tableau QUESTIONS
   const currentQuestion = QUESTIONS[currentQuestionIndex]
@@ -50,27 +57,44 @@ function Quiz() {
   const handleAnswerClick = (selectedAnswer) => {
     console.log('Réponse choisie :', selectedAnswer)
 
-    // Ici, dans un prochain commit, on comparera selectedAnswer
-    // à currentQuestion.correctAnswer pour mettre à jour le score.
+    // On vérifie si la réponse choisie est correcte
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer
 
-    // Si ce n'est pas la dernière question, on passe à la suivante.
-    if (currentQuestionIndex < QUESTIONS.length - 1) {
+    // Variable temporaire pour calculer le prochain score
+    let nextScore = score
+
+    if (isCorrect) {
+      nextScore = score + 1
+      setScore(nextScore)
+    }
+
+    // Est-ce que la question actuelle est la dernière du quiz ?
+    const isLastQuestion = currentQuestionIndex === QUESTIONS.length - 1
+
+    if (!isLastQuestion) {
+      // Si ce n'est pas la dernière question, on passe simplement à la suivante
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
     } else {
-      // Si c'est la dernière question, on affichera plus tard la page de résultats.
-      console.log('Quiz terminé (log provisoire, redirection à venir).')
+      // Si c'est la dernière question, on redirige vers la page des résultats
+      // en transmettant le score et le nombre total de questions
+      navigate('/results', {
+        state: {
+          score: nextScore,
+          total: QUESTIONS.length,
+        },
+      })
     }
   }
 
   return (
     <div className="quiz-page">
-      {/* On réutilise le même Header que sur la page d'accueil */}
+      {/* Header commun à plusieurs pages */}
       <Header />
 
       <main className="quiz">
         <h2>Quiz React (version locale)</h2>
 
-        {/* Petite information de progression simple */}
+        {/* Information de progression simple */}
         <p className="quiz__progress">
           Question {currentQuestionIndex + 1} / {QUESTIONS.length}
         </p>
@@ -84,10 +108,9 @@ function Quiz() {
 
         {/* Texte d'information temporaire pour expliquer l'état du développement */}
         <p className="quiz__info">
-          Dans cette version, les questions sont codées en dur. Dans un prochain
-          commit, nous ajouterons le calcul du score et l&apos;affichage de la
-          page de résultats, puis le chargement dynamique des questions via une
-          API.
+          Dans cette version, les questions sont stockées localement dans le code.
+          Dans les prochains commits, nous ajouterons le chargement dynamique
+          des questions via une API, puis la gestion du joker et du minuteur.
         </p>
       </main>
     </div>
