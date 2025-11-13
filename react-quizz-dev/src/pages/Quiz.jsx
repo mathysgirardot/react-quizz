@@ -125,11 +125,13 @@ function Quiz() {
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
     } else {
       // Si c'est la dernière question, on redirige vers la page des résultats
-      // en transmettant le score et le nombre total de questions
+      // en transmettant le score, le nombre total de questions
+      // et la catégorie utilisée (si elle existe).
       navigate('/results', {
         state: {
           score: nextScore,
           total: totalQuestions,
+          categoryId: categoryId,
         },
       })
     }
