@@ -8,6 +8,7 @@
 // - Chargement des questions au montage du composant (et quand la catégorie change)
 // - Affichage du thème sélectionné
 // - Affichage d'une question à la fois
+// - Barre de progression visuelle + texte "Question X / N"
 // - Mise à jour du score lorsque l'utilisateur clique sur une réponse
 // - Redirection vers la page des résultats à la fin du quiz
 // - Gestion d'un état de chargement et d'une erreur simple
@@ -124,6 +125,13 @@ function Quiz() {
     }
   }, [currentQuestion])
 
+  // Calcul du pourcentage de progression pour la barre.
+  // Exemple : question 3 sur 10 -> 30 %
+  const totalQuestions = questions.length
+  const progressPercentage = totalQuestions > 0
+    ? Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)
+    : 0
+
   // Fonction appelée lorsque l'utilisateur clique sur une réponse
   const handleAnswerClick = (selectedAnswer) => {
     // Si pour une raison quelconque il n'y a pas de question courante, on ne fait rien
@@ -144,7 +152,6 @@ function Quiz() {
       setScore(nextScore)
     }
 
-    const totalQuestions = questions.length
     const isLastQuestion = currentQuestionIndex === totalQuestions - 1
 
     if (!isLastQuestion) {
@@ -212,7 +219,7 @@ function Quiz() {
       <Header />
 
       <main className="quiz">
-        <h2>Quiz React (version API avec catégories et joker)</h2>
+        <h2>Quiz React (version API avec catégories, barre de progression et joker)</h2>
 
         {/* Affichage du thème actuel pour donner un contexte à l'utilisateur */}
         <p className="quiz__category">
@@ -241,10 +248,19 @@ function Quiz() {
           && currentQuestion
           && currentAnswers.length > 0 && (
             <>
-              {/* Information de progression simple */}
-              <p className="quiz__progress">
-                Question {currentQuestionIndex + 1} / {questions.length}
-              </p>
+              {/* Barre de progression visuelle */}
+              <div className="quiz__progress-container">
+                <div className="quiz__progress-text">
+                  Question {currentQuestionIndex + 1} / {totalQuestions}
+                </div>
+                <div className="quiz__progress-bar">
+                  <div
+                    className="quiz__progress-bar-fill"
+                    // Style inline pour ajuster la largeur en fonction de la progression
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </div>
 
               {/* Affichage de la question actuelle avec la liste de réponses courante
                   (qui peut être réduite si le joker a été utilisé). */}
