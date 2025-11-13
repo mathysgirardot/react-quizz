@@ -1,22 +1,50 @@
 // src/pages/Quiz.jsx
 // Page principale du quiz.
 // Dans cette version, les questions sont récupérées dynamiquement
-// depuis l'API OpenTDB via la fonction fetchQuizQuestions.
+// depuis l'API OpenTDB en fonction de la catégorie choisie sur la page d'accueil.
 //
 // Fonctionnalités actuelles :
-// - Chargement des questions au montage du composant
+// - Récupération de la catégorie (thème) via React Router (location.state)
+// - Chargement des questions au montage du composant (et quand la catégorie change)
+// - Affichage du thème sélectionné
 // - Affichage d'une question à la fois
 // - Mise à jour du score lorsque l'utilisateur clique sur une réponse
 // - Redirection vers la page des résultats à la fin du quiz
 // - Gestion d'un état de chargement et d'une erreur simple
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import Question from '../components/Question.jsx'
 import { fetchQuizQuestions } from '../api.js'
 
+// Correspondance entre les identifiants de catégorie et un label lisible.
+// Ces identifiants doivent être cohérents avec ceux utilisés dans Home.jsx.
+const CATEGORY_LABELS = {
+  9: 'Culture générale',
+  11: 'Cinéma',
+  21: 'Sport',
+  18: 'Informatique',
+}
+
 function Quiz() {
+  // Récupération de l'état transmis depuis la page Home via navigate('/quiz', { state: { ... } })
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // categoryId peut être undefined si l'utilisateur arrive directement sur /quiz
+  const categoryIdFromState = location.state?.categoryId
+
+  // Conversion en nombre (ou null si absence de catégorie)
+  const categoryId = typeof categoryIdFromState === 'number'
+    ? categoryIdFromState
+    : null
+
+  // Détermination d'un label lisible pour la catégorie actuelle
+  const categoryLabel = categoryId
+    ? CATEGORY_LABELS[categoryId] || 'Catégorie personnalisée'
+    : 'Catégorie aléatoire'
+
   // Liste des questions récupérées depuis l'API
   const [questions, setQuestions] = useState([])
 
@@ -32,20 +60,25 @@ function Quiz() {
   // Message d'erreur éventuel (par exemple si l'API ne répond pas)
   const [error, setError] = useState(null)
 
-  // Hook de navigation fourni par React Router
-  const navigate = useNavigate()
-
-  // Effet exécuté au montage du composant pour charger les questions
+  // Effet exécuté au montage du composant et lorsque la catégorie change
   useEffect(() => {
     async function loadQuestions() {
       try {
         setIsLoading(true)
         setError(null)
 
-        // On demande 10 questions à choix multiple à l'API
-        const loadedQuestions = await fetchQuizQuestions({
+        // Construction de l'objet d'options pour l'appel API.
+        // Si aucune catégorie n'est fournie, on laisse "category" undefined
+        // pour laisser l'API choisir un ensemble de questions variées.
+        const options = {
           amount: 10,
-        })
+        }
+
+        if (categoryId) {
+          options.category = categoryId
+        }
+
+        const loadedQuestions = await fetchQuizQuestions(options)
 
         setQuestions(loadedQuestions)
         setCurrentQuestionIndex(0)
@@ -59,7 +92,7 @@ function Quiz() {
     }
 
     loadQuestions()
-  }, [])
+  }, [categoryId])
 
   // Question actuelle (peut être undefined si le tableau est vide)
   const currentQuestion = questions[currentQuestionIndex]
@@ -108,7 +141,12 @@ function Quiz() {
       <Header />
 
       <main className="quiz">
-        <h2>Quiz React (version API)</h2>
+        <h2>Quiz React (version API avec catégories)</h2>
+
+        {/* Affichage du thème actuel pour donner un contexte à l'utilisateur */}
+        <p className="quiz__category">
+          Thème sélectionné : <strong>{categoryLabel}</strong>
+        </p>
 
         {/* Gestion de l'état de chargement */}
         {isLoading && (
@@ -142,10 +180,10 @@ function Quiz() {
 
             {/* Texte d'information temporaire pour expliquer l'état du développement */}
             <p className="quiz__info">
-              Les questions affichées sont maintenant récupérées dynamiquement
-              depuis l&apos;API OpenTDB. Dans les prochains commits, nous
-              ajouterons le joker, le minuteur par question et un meilleur
-              feedback visuel pour les bonnes/mauvaises réponses.
+              Les questions affichées sont maintenant filtrées en fonction de la
+              catégorie choisie sur la page d&apos;accueil. Dans les prochains
+              commits, nous ajouterons le joker, le minuteur par question et un
+              meilleur feedback visuel pour les bonnes/mauvaises réponses.
             </p>
           </>
         )}
@@ -153,7 +191,8 @@ function Quiz() {
         {/* Cas où l'API renvoie 0 question (peu probable mais géré proprement) */}
         {!isLoading && !error && questions.length === 0 && (
           <p className="quiz__status">
-            Aucune question n&apos;a été trouvée. Merci de réessayer plus tard.
+            Aucune question n&apos;a été trouvée pour ce thème. Merci de réessayer
+            avec une autre catégorie.
           </p>
         )}
       </main>
