@@ -24,9 +24,16 @@ import { fetchQuizQuestions } from '../api.js'
 // Ces identifiants doivent être cohérents avec ceux utilisés dans Home.jsx.
 const CATEGORY_LABELS = {
   9: 'Culture générale',
+  10: 'Livres',
   11: 'Cinéma',
-  21: 'Sport',
+  12: 'Musique',
+  14: 'Télévision',
+  15: 'Jeux vidéo',
+  17: 'Science & nature',
   18: 'Informatique',
+  21: 'Sport',
+  23: 'Histoire',
+  27: 'Animaux',
 }
 
 function Quiz() {

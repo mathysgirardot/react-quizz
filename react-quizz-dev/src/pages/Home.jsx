@@ -9,12 +9,19 @@ import Header from '../components/Header.jsx'
 
 // Liste des catégories proposées à l'utilisateur.
 // Les valeurs "id" correspondent aux identifiants de catégories de l'API OpenTDB.
-// (Nous utiliserons ces identifiants plus tard dans la page Quiz pour filtrer les questions.)
+// Nous proposons plusieurs thèmes pour rendre le quiz plus intéressant.
 const CATEGORIES = [
   { id: 9, label: 'Culture générale' },
+  { id: 10, label: 'Livres' },
   { id: 11, label: 'Cinéma' },
-  { id: 21, label: 'Sport' },
+  { id: 12, label: 'Musique' },
+  { id: 14, label: 'Télévision' },
+  { id: 15, label: 'Jeux vidéo' },
+  { id: 17, label: 'Science & nature' },
   { id: 18, label: 'Informatique' },
+  { id: 21, label: 'Sport' },
+  { id: 23, label: 'Histoire' },
+  { id: 27, label: 'Animaux' },
 ]
 
 function Home() {
