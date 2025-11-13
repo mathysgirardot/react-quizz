@@ -1,14 +1,23 @@
 // src/pages/Home.jsx
+// Page d'accueil de l'application React Quiz.
+// L'utilisateur découvre le concept et peut cliquer sur "Commencer le quiz".
+
+import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 
 function Home() {
+  // Hook fourni par React Router pour changer de page en JavaScript
+  const navigate = useNavigate()
+
+  // Fonction appelée quand on clique sur le bouton "Commencer le quiz"
   const handleStartClick = () => {
-    // TODO: plus tard, on naviguera vers la page du quiz (avec React Router)
-    console.log('Commencer le quiz')
+    // On redirige l'utilisateur vers la page /quiz
+    navigate('/quiz')
   }
 
   return (
     <div className="home">
+      {/* Header commun à plusieurs pages */}
       <Header />
 
       <main className="home__content">
@@ -20,11 +29,12 @@ function Home() {
         </p>
 
         <p>
-          Pour l&apos;instant, cette page est juste une base propre à partir
-          de laquelle on va construire le reste de l&apos;application
-          (questions, score, chrono, etc.).
+          Dans les prochaines étapes, nous ajouterons la gestion du score, le
+          minuteur par question, les animations de feedback et la page de
+          résultats détaillée.
         </p>
 
+        {/* Bouton qui lance réellement le quiz en changeant de page */}
         <button className="home__button" onClick={handleStartClick}>
           Commencer le quiz
         </button>
