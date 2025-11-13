@@ -1,50 +1,33 @@
-
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+// src/App.jsx
 import './App.css'
 
 function Header() {
-  return <h1>2048</h1>;
-}
-
-function GameBoard() {
-  return <p>Lorem</p>;
-}
-
-function Card() {
-  return <p>Lorem</p>;
+  return (
+    <header className="app-header">
+      <h1>React Quiz</h1>
+      <p className="app-header__subtitle">
+        Un petit jeu de questions / réponses développé en React
+      </p>
+    </header>
+  )
 }
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <Header/>
-      </div>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h2>Vite + React</h2>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+    <div className="app">
+      <Header />
+
+      <main className="app-main">
         <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
+          Bienvenue dans le projet de quiz. Dans les prochaines étapes, tu pourras
+          choisir un thème, répondre à 10 questions et utiliser un joker pour améliorer ton score.
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+        <p>
+          Pour l&apos;instant, cette page est juste une base propre à partir de laquelle
+          on va construire le reste de l&apos;application (pages, questions, API, score, etc.).
+        </p>
+      </main>
+    </div>
   )
 }
 
