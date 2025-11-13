@@ -195,6 +195,6 @@ Autres idées possibles
 👥 Auteurs
 
 Projet réalisé par :
-	•	Barre
+	•	Barr
 	•	Mathys
 
