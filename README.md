@@ -8,9 +8,9 @@ L’objectif est de créer une application de quiz interactive, avec :
 - choix de catégorie (thème),
 - fonctionnalités avancées comme un **joker** et une **barre de progression**.
 
+-
 
-
-##  Structure du projet
+## 🧩 Structure du projet
 
 Le dépôt contient actuellement le dossier principal suivant :
 
@@ -27,13 +27,13 @@ Le dépôt contient actuellement le dossier principal suivant :
     - `Question.jsx` : affiche une question et ses réponses (boutons)
     - `Score.jsx` : affiche le score final
   - `pages/`
-    - `Home.jsx` : page d’accueil (présentation du quiz + choix de catégorie + bouton “Commencer”)
+    - `Home.jsx` : page d’accueil (présentation du quiz + choix de catégorie + bouton Commencer)
     - `Quiz.jsx` : page principale du quiz (questions, progression, joker, score)
     - `Results.jsx` : page de résultats (score final + actions pour rejouer)
 
 
 
-## Installation et lancement
+## 🚀 Installation et lancement
 
 1. Cloner le dépôt puis entrer dans le dossier (si ce n’est pas déjà fait) :
 
@@ -54,7 +54,7 @@ npm run dev
 
 
 
-Fonctionnalités actuellement implémentées
+ Fonctionnalités actuellement implémentées
 
 État du projet au moment de ce README :
 
@@ -84,7 +84,9 @@ Sur la page d’accueil (Home.jsx) :
 	•	Histoire
 	•	Animaux
 	•	Le categoryId correspondant est transmis à la page Quiz via navigate('/quiz', { state: { categoryId } }).
-
+	•	Sur la page Quiz, le thème est affiché sous la forme :
+Thème sélectionné : nom de la catégorie
+ou Catégorie aléatoire si aucune catégorie n’a été fournie (accès direct à /quiz).
 
 3. Quiz avec questions dynamiques (API OpenTDB)
 
@@ -159,7 +161,7 @@ Une fonctionnalité personnalisée “Joker” a été ajoutée :
 
 
 
-Technologies utilisées
+🧠 Technologies utilisées
 	•	React (composants fonctionnels, hooks : useState, useEffect)
 	•	Vite (outillage et dev server)
 	•	React Router (react-router-dom) pour la navigation
@@ -167,12 +169,13 @@ Technologies utilisées
 
 
 
-Prochaines étapes prévues
+📌 Prochaines étapes prévues
 
 Les fonctionnalités suivantes sont prévues mais pas encore implémentées au moment de ce README :
 
 Fonctionnalités avancées / bonus
-	•	Minuteur par question : temps limité pour répondre,
+	•	Minuteur par question :
+	•	temps limité pour répondre,
 	•	passage automatique à la question suivante ou pénalité en cas de temps écoulé.
 	•	Feedback visuel pour les réponses :
 	•	couleurs ou styles différents pour indiquer une bonne/mauvaise réponse,
@@ -194,6 +197,4 @@ Autres idées possibles
 Projet réalisé par :
 	•	Barre
 	•	Mathys
-
-dans le cadre du cours React / Développement web (H3).
 
