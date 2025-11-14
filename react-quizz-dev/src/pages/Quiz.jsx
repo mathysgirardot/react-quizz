@@ -317,6 +317,8 @@ function Quiz() {
                 </div>
               </div>
 
+
+              {/*
               <div className="quiz__timer">
                 <p>
                   Temps restant :{' '}
@@ -325,6 +327,17 @@ function Quiz() {
                   seconde(s)
                 </p>
               </div>
+               */}
+
+              <div className={`quiz__timer ${ timeLeft <= 5 ? 'quiz__timer--danger' : ''}`}>
+                <p>
+                  Temps restant :{' '}
+                  <strong>{timeLeft}</strong>
+                  {' '}
+                  seconde(s)
+                </p>
+              </div>
+
 
               <Question
                 questionText={currentQuestion.questionText}

@@ -1,42 +1,304 @@
-#root {
-  max-width: 1280px;
+/* src/App.css */
+/* Mise en page générale et styles des principales sections */
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 2rem 1rem;
+}
+
+/* Conteneurs de page */
+.home,
+.quiz-page,
+.results-page {
+  width: 100%;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
+}
+
+/* Cartes principales */
+.home__content,
+.quiz,
+.results {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 2rem 1.75rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Header générique (si présent dans Header.jsx) */
+header,
+.header {
   text-align: center;
+  margin-bottom: 1.5rem;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+header h1,
+.header h1 {
+  margin: 0;
+  font-size: 1.9rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+header p,
+.header p {
+  margin-top: 0.5rem;
+  color: #555;
+}
+
+/* Titres */
+.home__content h2,
+.quiz h2,
+.results h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+}
+
+/* Paragraphes généraux */
+.home__content p,
+.quiz p,
+.results p {
+  color: #444;
+  margin-bottom: 0.75rem;
+}
+
+/* --- Page Home --- */
+
+.home__category {
+  margin: 1.5rem 0;
+}
+
+.home__category-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.home__category-select {
+  width: 100%;
+  max-width: 320px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #ccd2e3;
+  background-color: #f9fafc;
+  font-size: 0.95rem;
+}
+
+/* Boutons principaux */
+
+.home__button,
+.quiz__joker-button,
+.results__button {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
+}
+
+.home__button:hover,
+.quiz__joker-button:hover,
+.results__button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.45);
+}
+
+.home__button:active,
+.quiz__joker-button:active,
+.results__button:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.3);
+}
+
+.home__button:disabled,
+.quiz__joker-button:disabled,
+.results__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Bouton secondaire (page résultats) */
+
+.results__button--secondary {
+  background: #e5e7eb;
+  color: #111827;
+  box-shadow: none;
+}
+
+.results__button--secondary:hover {
+  background: #d1d5db;
+  box-shadow: none;
+}
+
+/* --- Quiz --- */
+
+.quiz__category {
+  margin-bottom: 1rem;
+  font-size: 0.98rem;
+  color: #555;
+}
+
+.quiz__status {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.98rem;
+}
+
+.quiz__status--error {
+  color: #b91c1c;
+}
+
+/* Barre de progression */
+
+.quiz__progress-container {
+  margin-bottom: 1.25rem;
+}
+
+.quiz__progress-text {
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+  color: #4b5563;
+}
+
+.quiz__progress-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background-color: #e5e7eb;
+  overflow: hidden;
+}
+
+.quiz__progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4f46e5, #22c55e);
+  transition: width 0.25s ease-out;
+}
+
+/* Minuteur */
+
+.quiz__timer {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.quiz__timer strong {
+  font-weight: 700;
+}
+
+.quiz__timer--danger {
+  color: #b91c1c;
+}
+
+/* Joker */
+
+.quiz__joker {
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.quiz__joker-text {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+/* Info texte en bas du quiz */
+
+.quiz__info {
+  margin-top: 1rem;
+  font-size: 0.86rem;
+  color: #6b7280;
+}
+
+/* --- Question --- */
+
+.question {
+  margin-top: 1rem;
+}
+
+.question__text {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.question__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.question__answer-button {
+  width: 100%;
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.05s ease,
+    box-shadow 0.05s ease;
+}
+
+.question__answer-button:hover {
+  background-color: #eef2ff;
+  border-color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Le style vert/rouge est géré en inline dans le composant Question,
+   ce CSS s'applique donc surtout avant la sélection. */
+
+/* --- Résultats --- */
+
+.results__message {
+  margin-top: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.results__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Responsive */
+
+@media (max-width: 640px) {
+  .home__content,
+  .quiz,
+  .results {
+    padding: 1.5rem 1.25rem;
   }
-  to {
-    transform: rotate(360deg);
+
+  .question__text {
+    font-size: 1.05rem;
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  .home__button,
+  .quiz__joker-button,
+  .results__button {
+    width: 100%;
+    text-align: center;
   }
-}
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+  .results__buttons {
+    flex-direction: column;
+  }
 }
