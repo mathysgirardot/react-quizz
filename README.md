@@ -277,7 +277,7 @@ Les idées suivantes ne sont pas implémentées mais pourraient être ajoutées 
 👥 Auteurs
 
 Projet réalisé par :
-	•	Barr
-	•	Mathys
+	•	Abiola Barr Akobi
+	•	Mathys Girardot
 
-dans le cadre du cours React / Développement web (H3).
+dans le cadre du cours React / Développement web (H3-S1).
