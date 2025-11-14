@@ -14,8 +14,10 @@
 // - Gestion d'un état de chargement et d'une erreur simple
 // - Joker utilisable une seule fois par partie
 //   -> réduit le nombre de réponses possibles pour la question en cours
-// - Minuteur affiché pour chaque question (20 secondes par défaut)
-//   -> quand le temps est écoulé, on passe à la question suivante automatiquement
+// - Minuteur par question (20 secondes)
+//   -> quand le temps est écoulé, on passe à la question suivante
+// - (NOUVEAU) Feedback visuel sur la réponse choisie
+//   -> vert si bonne réponse, rouge si mauvaise, avec un court délai avant la question suivante
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -41,6 +43,10 @@ const CATEGORY_LABELS = {
 
 // Durée (en secondes) allouée pour répondre à chaque question.
 const QUESTION_TIME_SECONDS = 20
+
+// Durée (en millisecondes) pendant laquelle on affiche le feedback visuel
+// avant de passer à la question suivante.
+const FEEDBACK_DELAY_MS = 800
 
 function Quiz() {
   // Récupération de l'état transmis depuis la page Home via navigate('/quiz', { state: { ... } })
@@ -85,6 +91,10 @@ function Quiz() {
   // Temps restant pour répondre à la question actuelle (en secondes)
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_SECONDS)
 
+  // Réponse actuellement sélectionnée par l'utilisateur.
+  // Sert pour le feedback visuel (vert/rouge) et pour bloquer les doubles clics.
+  const [selectedAnswer, setSelectedAnswer] = useState(null)
+
   // Effet exécuté au montage du composant et lorsque la catégorie change
   useEffect(() => {
     async function loadQuestions() {
@@ -92,7 +102,6 @@ function Quiz() {
         setIsLoading(true)
         setError(null)
 
-        // Construction de l'objet d'options pour l'appel API.
         const options = {
           amount: 10,
         }
@@ -108,6 +117,7 @@ function Quiz() {
         setScore(0)
         setHasUsedJoker(false)
         setTimeLeft(QUESTION_TIME_SECONDS)
+        setSelectedAnswer(null)
       } catch (err) {
         console.error('Erreur lors du chargement des questions :', err)
         setError("Impossible de charger les questions. Merci de réessayer plus tard.")
@@ -119,21 +129,23 @@ function Quiz() {
     loadQuestions()
   }, [categoryId])
 
+  const totalQuestions = questions.length
+
   // Question actuelle (peut être undefined si le tableau est vide)
   const currentQuestion = questions[currentQuestionIndex]
 
   // À chaque fois que la question actuelle change, on réinitialise
-  // la liste des réponses affichées et le minuteur.
+  // la liste des réponses affichées et le minuteur, et on efface
+  // la réponse sélectionnée.
   useEffect(() => {
     if (currentQuestion) {
       setCurrentAnswers(currentQuestion.answers)
       setTimeLeft(QUESTION_TIME_SECONDS)
+      setSelectedAnswer(null)
     } else {
       setCurrentAnswers([])
     }
   }, [currentQuestion])
-
-  const totalQuestions = questions.length
 
   // Fonction appelée lorsque le temps est écoulé pour la question courante.
   // Ici, on considère que la réponse est simplement "ratée" et on passe
@@ -159,15 +171,19 @@ function Quiz() {
   }
 
   // Effet responsable du compte à rebours du minuteur.
-  // Tant qu'il reste du temps, on décrémente timeLeft toutes les secondes.
-  // Lorsque timeLeft atteint 0, on appelle handleTimeUp.
+  // Le minuteur s'arrête dès qu'une réponse est sélectionnée
+  // (on met en pause le temps pendant l'affichage du feedback).
   useEffect(() => {
     if (isLoading || error || !currentQuestion) {
       return undefined
     }
 
+    // Si une réponse est sélectionnée, on ne décrémente plus le temps.
+    if (selectedAnswer !== null) {
+      return undefined
+    }
+
     if (timeLeft <= 0) {
-      // Temps écoulé : on passe à la question suivante (ou aux résultats).
       handleTimeUp()
       return undefined
     }
@@ -176,11 +192,10 @@ function Quiz() {
       setTimeLeft((previousTime) => previousTime - 1)
     }, 1000)
 
-    // Nettoyage : on annule le timeout si la question change ou si le composant est démonté.
     return () => {
       clearTimeout(timeoutId)
     }
-  }, [timeLeft, isLoading, error, currentQuestion])
+  }, [timeLeft, isLoading, error, currentQuestion, selectedAnswer])
 
   // Calcul du pourcentage de progression pour la barre.
   const progressPercentage = totalQuestions > 0
@@ -188,15 +203,20 @@ function Quiz() {
     : 0
 
   // Fonction appelée lorsque l'utilisateur clique sur une réponse
-  const handleAnswerClick = (selectedAnswer) => {
+  const handleAnswerClick = (answer) => {
     if (!currentQuestion) {
       return
     }
 
-    console.log('Réponse choisie :', selectedAnswer)
+    // Si une réponse est déjà sélectionnée, on ignore les clics supplémentaires.
+    if (selectedAnswer !== null) {
+      return
+    }
 
-    // On vérifie si la réponse choisie est correcte
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer
+    // On mémorise la réponse choisie pour afficher le feedback (vert/rouge)
+    setSelectedAnswer(answer)
+
+    const isCorrect = answer === currentQuestion.correctAnswer
 
     let nextScore = score
 
@@ -207,17 +227,21 @@ function Quiz() {
 
     const isLastQuestion = currentQuestionIndex === totalQuestions - 1
 
-    if (!isLastQuestion) {
-      setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
-    } else {
-      navigate('/results', {
-        state: {
-          score: nextScore,
-          total: totalQuestions,
-          categoryId,
-        },
-      })
-    }
+    // On laisse un petit délai pour montrer le feedback visuel
+    // avant de passer à la question suivante ou aux résultats.
+    setTimeout(() => {
+      if (!isLastQuestion) {
+        setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
+      } else {
+        navigate('/results', {
+          state: {
+            score: nextScore,
+            total: totalQuestions,
+            categoryId,
+          },
+        })
+      }
+    }, FEEDBACK_DELAY_MS)
   }
 
   // Fonction appelée lorsque l'utilisateur clique sur le bouton "Utiliser mon joker"
@@ -232,7 +256,7 @@ function Quiz() {
 
     const correctAnswer = currentQuestion.correctAnswer
     const incorrectAnswers = currentQuestion.answers.filter(
-      (answer) => answer !== correctAnswer,
+      (ans) => ans !== correctAnswer,
     )
 
     if (incorrectAnswers.length === 0) {
@@ -243,8 +267,8 @@ function Quiz() {
     const randomIncorrectAnswer = incorrectAnswers[randomIndex]
 
     const reducedAnswers = currentAnswers.filter(
-      (answer) =>
-        answer === correctAnswer || answer === randomIncorrectAnswer,
+      (ans) =>
+        ans === correctAnswer || ans === randomIncorrectAnswer,
     )
 
     setCurrentAnswers(reducedAnswers)
@@ -256,7 +280,7 @@ function Quiz() {
       <Header />
 
       <main className="quiz">
-        <h2>Quiz React (catégories, barre de progression, joker et minuteur)</h2>
+        <h2>Quiz React (catégories, barre de progression, joker, minuteur et feedback)</h2>
 
         <p className="quiz__category">
           Thème sélectionné : <strong>{categoryLabel}</strong>
@@ -306,6 +330,8 @@ function Quiz() {
                 questionText={currentQuestion.questionText}
                 answers={currentAnswers}
                 onAnswerClick={handleAnswerClick}
+                selectedAnswer={selectedAnswer}
+                correctAnswer={currentQuestion.correctAnswer}
               />
 
               <section className="quiz__joker">
@@ -328,7 +354,8 @@ function Quiz() {
                 Les questions affichées sont filtrées en fonction de la
                 catégorie choisie sur la page d&apos;accueil. Tu disposes
                 d&apos;un joker par partie pour t&apos;aider, ainsi que d&apos;un
-                temps limité pour répondre à chaque question.
+                temps limité pour répondre à chaque question. Un feedback
+                visuel t&apos;indique si ta réponse est correcte ou non.
               </p>
             </>
         )}
