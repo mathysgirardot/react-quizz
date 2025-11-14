@@ -12,8 +12,10 @@
 // - Mise à jour du score lorsque l'utilisateur clique sur une réponse
 // - Redirection vers la page des résultats à la fin du quiz
 // - Gestion d'un état de chargement et d'une erreur simple
-// - Ajout d'un "joker" utilisable une seule fois par partie
-//   -> le joker réduit le nombre de réponses possibles pour la question en cours
+// - Joker utilisable une seule fois par partie
+//   -> réduit le nombre de réponses possibles pour la question en cours
+// - Minuteur affiché pour chaque question (20 secondes par défaut)
+//   -> quand le temps est écoulé, on passe à la question suivante automatiquement
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -36,6 +38,9 @@ const CATEGORY_LABELS = {
   23: 'Histoire',
   27: 'Animaux',
 }
+
+// Durée (en secondes) allouée pour répondre à chaque question.
+const QUESTION_TIME_SECONDS = 20
 
 function Quiz() {
   // Récupération de l'état transmis depuis la page Home via navigate('/quiz', { state: { ... } })
@@ -77,6 +82,9 @@ function Quiz() {
   // Ce tableau peut être réduit si l'utilisateur utilise le joker.
   const [currentAnswers, setCurrentAnswers] = useState([])
 
+  // Temps restant pour répondre à la question actuelle (en secondes)
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_SECONDS)
+
   // Effet exécuté au montage du composant et lorsque la catégorie change
   useEffect(() => {
     async function loadQuestions() {
@@ -85,8 +93,6 @@ function Quiz() {
         setError(null)
 
         // Construction de l'objet d'options pour l'appel API.
-        // Si aucune catégorie n'est fournie, on laisse "category" undefined
-        // pour laisser l'API choisir un ensemble de questions variées.
         const options = {
           amount: 10,
         }
@@ -101,6 +107,7 @@ function Quiz() {
         setCurrentQuestionIndex(0)
         setScore(0)
         setHasUsedJoker(false)
+        setTimeLeft(QUESTION_TIME_SECONDS)
       } catch (err) {
         console.error('Erreur lors du chargement des questions :', err)
         setError("Impossible de charger les questions. Merci de réessayer plus tard.")
@@ -116,25 +123,72 @@ function Quiz() {
   const currentQuestion = questions[currentQuestionIndex]
 
   // À chaque fois que la question actuelle change, on réinitialise
-  // la liste des réponses affichées à la liste complète fournie par l'API.
+  // la liste des réponses affichées et le minuteur.
   useEffect(() => {
     if (currentQuestion) {
       setCurrentAnswers(currentQuestion.answers)
+      setTimeLeft(QUESTION_TIME_SECONDS)
     } else {
       setCurrentAnswers([])
     }
   }, [currentQuestion])
 
-  // Calcul du pourcentage de progression pour la barre.
-  // Exemple : question 3 sur 10 -> 30 %
   const totalQuestions = questions.length
+
+  // Fonction appelée lorsque le temps est écoulé pour la question courante.
+  // Ici, on considère que la réponse est simplement "ratée" et on passe
+  // à la question suivante (sans modifier le score).
+  function handleTimeUp() {
+    if (!currentQuestion) {
+      return
+    }
+
+    const isLastQuestion = currentQuestionIndex === totalQuestions - 1
+
+    if (!isLastQuestion) {
+      setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
+    } else {
+      navigate('/results', {
+        state: {
+          score,
+          total: totalQuestions,
+          categoryId,
+        },
+      })
+    }
+  }
+
+  // Effet responsable du compte à rebours du minuteur.
+  // Tant qu'il reste du temps, on décrémente timeLeft toutes les secondes.
+  // Lorsque timeLeft atteint 0, on appelle handleTimeUp.
+  useEffect(() => {
+    if (isLoading || error || !currentQuestion) {
+      return undefined
+    }
+
+    if (timeLeft <= 0) {
+      // Temps écoulé : on passe à la question suivante (ou aux résultats).
+      handleTimeUp()
+      return undefined
+    }
+
+    const timeoutId = setTimeout(() => {
+      setTimeLeft((previousTime) => previousTime - 1)
+    }, 1000)
+
+    // Nettoyage : on annule le timeout si la question change ou si le composant est démonté.
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [timeLeft, isLoading, error, currentQuestion])
+
+  // Calcul du pourcentage de progression pour la barre.
   const progressPercentage = totalQuestions > 0
     ? Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)
     : 0
 
   // Fonction appelée lorsque l'utilisateur clique sur une réponse
   const handleAnswerClick = (selectedAnswer) => {
-    // Si pour une raison quelconque il n'y a pas de question courante, on ne fait rien
     if (!currentQuestion) {
       return
     }
@@ -144,7 +198,6 @@ function Quiz() {
     // On vérifie si la réponse choisie est correcte
     const isCorrect = selectedAnswer === currentQuestion.correctAnswer
 
-    // Variable temporaire pour calculer le prochain score
     let nextScore = score
 
     if (isCorrect) {
@@ -155,55 +208,40 @@ function Quiz() {
     const isLastQuestion = currentQuestionIndex === totalQuestions - 1
 
     if (!isLastQuestion) {
-      // Si ce n'est pas la dernière question, on passe simplement à la suivante
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
     } else {
-      // Si c'est la dernière question, on redirige vers la page des résultats
-      // en transmettant le score, le nombre total de questions
-      // et la catégorie utilisée (si elle existe).
       navigate('/results', {
         state: {
           score: nextScore,
           total: totalQuestions,
-          categoryId: categoryId,
+          categoryId,
         },
       })
     }
   }
 
   // Fonction appelée lorsque l'utilisateur clique sur le bouton "Utiliser mon joker"
-  // Le joker est utilisable une seule fois dans la partie.
-  // Ici, il réduit le nombre de réponses possibles pour la question en cours
-  // (on garde la bonne réponse + une mauvaise réponse au hasard).
   const handleUseJoker = () => {
     if (!currentQuestion) {
       return
     }
 
     if (hasUsedJoker) {
-      // Si le joker a déjà été utilisé, on ne fait rien.
       return
     }
 
-    // On sépare la bonne réponse des mauvaises réponses
     const correctAnswer = currentQuestion.correctAnswer
     const incorrectAnswers = currentQuestion.answers.filter(
       (answer) => answer !== correctAnswer,
     )
 
     if (incorrectAnswers.length === 0) {
-      // Cas très rare (si l'API renvoie une seule réponse),
-      // on ne modifie pas la liste actuelle.
       return
     }
 
-    // On choisit une mauvaise réponse au hasard
     const randomIndex = Math.floor(Math.random() * incorrectAnswers.length)
     const randomIncorrectAnswer = incorrectAnswers[randomIndex]
 
-    // On construit une nouvelle liste de réponses
-    // en conservant uniquement la bonne réponse + la mauvaise tirée au sort.
-    // On respecte l'ordre d'apparition actuel des réponses.
     const reducedAnswers = currentAnswers.filter(
       (answer) =>
         answer === correctAnswer || answer === randomIncorrectAnswer,
@@ -215,40 +253,34 @@ function Quiz() {
 
   return (
     <div className="quiz-page">
-      {/* Header commun à plusieurs pages */}
       <Header />
 
       <main className="quiz">
-        <h2>Quiz React (version API avec catégories, barre de progression et joker)</h2>
+        <h2>Quiz React (catégories, barre de progression, joker et minuteur)</h2>
 
-        {/* Affichage du thème actuel pour donner un contexte à l'utilisateur */}
         <p className="quiz__category">
           Thème sélectionné : <strong>{categoryLabel}</strong>
         </p>
 
-        {/* Gestion de l'état de chargement */}
         {isLoading && (
           <p className="quiz__status">
             Chargement des questions en cours...
           </p>
         )}
 
-        {/* Affichage d'un message d'erreur en cas de problème avec l'API */}
         {error && !isLoading && (
           <p className="quiz__status quiz__status--error">
             {error}
           </p>
         )}
 
-        {/* Affichage du contenu du quiz uniquement si les questions sont chargées,
-            qu'il n'y a pas d'erreur et que le tableau n'est pas vide. */}
         {!isLoading
           && !error
           && questions.length > 0
           && currentQuestion
           && currentAnswers.length > 0 && (
             <>
-              {/* Barre de progression visuelle */}
+              {/* Bloc progression + minuteur */}
               <div className="quiz__progress-container">
                 <div className="quiz__progress-text">
                   Question {currentQuestionIndex + 1} / {totalQuestions}
@@ -256,21 +288,26 @@ function Quiz() {
                 <div className="quiz__progress-bar">
                   <div
                     className="quiz__progress-bar-fill"
-                    // Style inline pour ajuster la largeur en fonction de la progression
                     style={{ width: `${progressPercentage}%` }}
                   />
                 </div>
               </div>
 
-              {/* Affichage de la question actuelle avec la liste de réponses courante
-                  (qui peut être réduite si le joker a été utilisé). */}
+              <div className="quiz__timer">
+                <p>
+                  Temps restant :{' '}
+                  <strong>{timeLeft}</strong>
+                  {' '}
+                  seconde(s)
+                </p>
+              </div>
+
               <Question
                 questionText={currentQuestion.questionText}
                 answers={currentAnswers}
                 onAnswerClick={handleAnswerClick}
               />
 
-              {/* Section dédiée au joker */}
               <section className="quiz__joker">
                 <h3>Joker</h3>
                 <p className="quiz__joker-text">
@@ -287,18 +324,15 @@ function Quiz() {
                 </button>
               </section>
 
-              {/* Texte d'information temporaire pour expliquer l'état du développement */}
               <p className="quiz__info">
                 Les questions affichées sont filtrées en fonction de la
                 catégorie choisie sur la page d&apos;accueil. Tu disposes
-                d&apos;un joker par partie pour t&apos;aider. Dans les prochains
-                commits, nous ajouterons le minuteur par question et un
-                meilleur feedback visuel pour les bonnes/mauvaises réponses.
+                d&apos;un joker par partie pour t&apos;aider, ainsi que d&apos;un
+                temps limité pour répondre à chaque question.
               </p>
             </>
         )}
 
-        {/* Cas où l'API renvoie 0 question (peu probable mais géré proprement) */}
         {!isLoading && !error && questions.length === 0 && (
           <p className="quiz__status">
             Aucune question n&apos;a été trouvée pour ce thème. Merci de réessayer
