@@ -1,70 +1,110 @@
 // src/pages/Results.jsx
-// Page des résultats du quiz.
-// On récupère le score (et éventuellement la catégorie utilisée)
-// transmis par la page Quiz via React Router, puis on propose
-// à l'utilisateur de rejouer ou de retourner à l'accueil.
+// Page d'affichage du score final et des actions pour rejouer
+// ou revenir à la page d'accueil.
 
 import { useLocation, useNavigate } from 'react-router-dom'
-import Header from '../components/Header.jsx'
 import Score from '../components/Score.jsx'
+
+const CATEGORY_LABELS = {
+  9: 'Culture générale',
+  10: 'Livres',
+  11: 'Cinéma',
+  12: 'Musique',
+  14: 'Télévision',
+  15: 'Jeux vidéo',
+  17: 'Science & nature',
+  18: 'Informatique',
+  21: 'Sport',
+  23: 'Histoire',
+  27: 'Animaux',
+}
+
+const DIFFICULTY_LABELS = {
+  easy: 'Facile',
+  medium: 'Moyen',
+  hard: 'Difficile',
+}
 
 function Results() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Récupération des données transmises par navigate(..., { state: { ... } })
-  // Si aucune donnée n'est fournie (accès direct à /results), on utilise des valeurs par défaut.
-  const state = location.state || { score: 0, total: 0, categoryId: null }
-  const { score, total, categoryId } = state
+  const scoreFromState = location.state?.score
+  const totalFromState = location.state?.total
+  const categoryIdFromState = location.state?.categoryId
+  const difficultyFromState = location.state?.difficulty
 
-  // Fonction appelée quand l'utilisateur clique sur "Rejouer avec le même thème"
-  const handleReplaySameCategory = () => {
-    if (categoryId) {
-      // Si une catégorie a été utilisée, on la renvoie à la page Quiz
-      navigate('/quiz', {
-        state: {
-          categoryId: categoryId,
-        },
-      })
-    } else {
-      // Si aucune catégorie n'est disponible, on relance un quiz "aléatoire"
-      navigate('/quiz')
+  const score = typeof scoreFromState === 'number' ? scoreFromState : 0
+  const total = typeof totalFromState === 'number' ? totalFromState : 0
+
+  const categoryId = typeof categoryIdFromState === 'number'
+    ? categoryIdFromState
+    : null
+
+  const difficulty = typeof difficultyFromState === 'string'
+    ? difficultyFromState
+    : null
+
+  const categoryLabel = categoryId
+    ? CATEGORY_LABELS[categoryId] || 'Catégorie personnalisée'
+    : 'Catégorie inconnue'
+
+  const difficultyLabel = difficulty
+    ? DIFFICULTY_LABELS[difficulty] || difficulty
+    : 'Non définie'
+
+  const handleReplaySameSettings = () => {
+    if (!categoryId && !difficulty) {
+      navigate('/')
+      return
     }
+
+    navigate('/quiz', {
+      state: {
+        categoryId,
+        difficulty,
+      },
+    })
   }
 
-  // Fonction appelée quand l'utilisateur souhaite retourner à l'accueil
-  // pour éventuellement choisir un autre thème.
   const handleBackToHome = () => {
     navigate('/')
   }
 
   return (
     <div className="results-page">
-      <Header />
-
       <main className="results">
         <h2>Résultats du quiz</h2>
 
-        {/* Affichage du score via un composant dédié */}
         <Score score={score} total={total} />
 
         <p className="results__message">
-          Merci d&apos;avoir participé à ce petit quiz. Tu peux rejouer avec le
-          même thème pour essayer d&apos;améliorer ton score, ou revenir à
-          l&apos;accueil pour choisir une nouvelle catégorie.
+          Thème joué :
+          {' '}
+          <strong>{categoryLabel}</strong>
+          {' '}
+          — Difficulté :
+          {' '}
+          <strong>{difficultyLabel}</strong>
+        </p>
+
+        <p>
+          Tu peux rejouer immédiatement une nouvelle partie avec les mêmes
+          paramètres, ou revenir à la page d&apos;accueil pour changer de
+          catégorie et de niveau de difficulté.
         </p>
 
         <div className="results__buttons">
-          {/* Bouton pour rejouer immédiatement avec le même thème */}
           <button
+            type="button"
             className="results__button"
-            onClick={handleReplaySameCategory}
+            onClick={handleReplaySameSettings}
           >
-            Rejouer avec le même thème
+            Rejouer avec les mêmes paramètres
           </button>
 
-          {/* Bouton pour revenir à l'accueil et choisir un autre thème */}
           <button
+            type="button"
             className="results__button results__button--secondary"
             onClick={handleBackToHome}
           >

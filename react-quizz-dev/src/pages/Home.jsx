@@ -1,12 +1,11 @@
 // src/pages/Home.jsx
 // Page d'accueil de l'application React Quiz.
 // L'utilisateur découvre le concept, choisit un thème (catégorie)
-// et maintenant un niveau de difficulté, puis peut cliquer sur
+// et un niveau de difficulté, puis peut cliquer sur
 // "Commencer le quiz" pour lancer une partie.
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Header from '../components/Header.jsx'
 
 // Liste des catégories proposées à l'utilisateur.
 // Les valeurs "id" correspondent aux identifiants de catégories de l'API OpenTDB.
@@ -41,22 +40,18 @@ function Home() {
   // Niveau de difficulté sélectionné.
   const [selectedDifficulty, setSelectedDifficulty] = useState(DIFFICULTY_LEVELS[0].value)
 
-  // Fonction appelée lorsque l'utilisateur change de catégorie.
   const handleCategoryChange = (event) => {
     const newCategoryId = Number(event.target.value)
     setSelectedCategoryId(newCategoryId)
   }
 
-  // Fonction appelée lorsque l'utilisateur change de difficulté.
   const handleDifficultyChange = (event) => {
     const newDifficulty = event.target.value
     setSelectedDifficulty(newDifficulty)
   }
 
-  // Fonction appelée quand on clique sur le bouton "Commencer le quiz".
+  // Quand on clique sur "Commencer le quiz"
   const handleStartClick = () => {
-    // On redirige l'utilisateur vers la page /quiz
-    // en transmettant la catégorie ET la difficulté choisies.
     navigate('/quiz', {
       state: {
         categoryId: selectedCategoryId,
@@ -67,9 +62,6 @@ function Home() {
 
   return (
     <div className="home">
-      {/* Header commun à plusieurs pages */}
-      <Header />
-
       <main className="home__content">
         <h2>Bienvenue dans le React Quiz</h2>
 
@@ -84,7 +76,7 @@ function Home() {
           fonction de ces paramètres.
         </p>
 
-        {/* Bloc de sélection de la catégorie du quiz */}
+        {/* Choix de la catégorie */}
         <section className="home__category">
           <label htmlFor="category-select" className="home__category-label">
             Choisis une catégorie :
@@ -104,7 +96,7 @@ function Home() {
           </select>
         </section>
 
-        {/* Bloc de sélection de la difficulté du quiz */}
+        {/* Choix de la difficulté */}
         <section className="home__category">
           <label htmlFor="difficulty-select" className="home__category-label">
             Choisis un niveau de difficulté :
@@ -124,7 +116,6 @@ function Home() {
           </select>
         </section>
 
-        {/* Bouton qui lance le quiz avec la catégorie + difficulté sélectionnées */}
         <button className="home__button" onClick={handleStartClick}>
           Commencer le quiz
         </button>

@@ -1,31 +1,13 @@
 // src/pages/Quiz.jsx
 // Page principale du quiz.
-// Dans cette version, les questions sont récupérées dynamiquement
-// depuis l'API OpenTDB en fonction de la catégorie et de la difficulté
+// Questions récupérées dynamiquement selon la catégorie ET la difficulté
 // choisies sur la page d'accueil.
-//
-// Fonctionnalités actuelles :
-// - Récupération de la catégorie (thème) et de la difficulté via React Router (location.state)
-// - Chargement des questions au montage du composant (et quand la catégorie/difficulté change)
-// - Affichage du thème sélectionné et du niveau de difficulté
-// - Affichage d'une question à la fois
-// - Barre de progression visuelle + texte "Question X / N"
-// - Mise à jour du score lorsque l'utilisateur clique sur une réponse
-// - Redirection vers la page des résultats à la fin du quiz
-// - Gestion d'un état de chargement et d'une erreur simple
-// - Joker utilisable une seule fois par partie
-//   -> réduit le nombre de réponses possibles pour la question en cours
-// - Minuteur par question (20 secondes)
-//   -> quand le temps est écoulé, on passe à la question suivante
-// - Feedback visuel sur la réponse choisie (vert / rouge)
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import Header from '../components/Header.jsx'
 import Question from '../components/Question.jsx'
 import { fetchQuizQuestions } from '../api.js'
 
-// Correspondance entre les identifiants de catégorie et un label lisible.
 const CATEGORY_LABELS = {
   9: 'Culture générale',
   10: 'Livres',
@@ -40,25 +22,19 @@ const CATEGORY_LABELS = {
   27: 'Animaux',
 }
 
-// Labels lisibles pour les niveaux de difficulté.
 const DIFFICULTY_LABELS = {
   easy: 'Facile',
   medium: 'Moyen',
   hard: 'Difficile',
 }
 
-// Durée (en secondes) allouée pour répondre à chaque question.
 const QUESTION_TIME_SECONDS = 20
-
-// Durée (en millisecondes) pendant laquelle on affiche le feedback visuel
-// avant de passer à la question suivante.
 const FEEDBACK_DELAY_MS = 800
 
 function Quiz() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Récupération des paramètres transmis par la page Home.
   const categoryIdFromState = location.state?.categoryId
   const difficultyFromState = location.state?.difficulty
 
@@ -88,16 +64,13 @@ function Quiz() {
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_SECONDS)
   const [selectedAnswer, setSelectedAnswer] = useState(null)
 
-  // Chargement des questions quand la catégorie ou la difficulté change.
   useEffect(() => {
     async function loadQuestions() {
       try {
         setIsLoading(true)
         setError(null)
 
-        const options = {
-          amount: 10,
-        }
+        const options = { amount: 10 }
 
         if (categoryId) {
           options.category = categoryId
@@ -129,7 +102,6 @@ function Quiz() {
   const totalQuestions = questions.length
   const currentQuestion = questions[currentQuestionIndex]
 
-  // Quand la question change : reset réponses, timer, réponse sélectionnée.
   useEffect(() => {
     if (currentQuestion) {
       setCurrentAnswers(currentQuestion.answers)
@@ -141,34 +113,27 @@ function Quiz() {
   }, [currentQuestion])
 
   function handleTimeUp() {
-    if (!currentQuestion) {
-      return
-    }
+    if (!currentQuestion) return
 
     const isLastQuestion = currentQuestionIndex === totalQuestions - 1
 
     if (!isLastQuestion) {
-      setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
+      setCurrentQuestionIndex((prev) => prev + 1)
     } else {
       navigate('/results', {
         state: {
           score,
           total: totalQuestions,
           categoryId,
+          difficulty,
         },
       })
     }
   }
 
-  // Minuteur : décrémente tant qu'aucune réponse n'est sélectionnée.
   useEffect(() => {
-    if (isLoading || error || !currentQuestion) {
-      return undefined
-    }
-
-    if (selectedAnswer !== null) {
-      return undefined
-    }
+    if (isLoading || error || !currentQuestion) return undefined
+    if (selectedAnswer !== null) return undefined
 
     if (timeLeft <= 0) {
       handleTimeUp()
@@ -176,12 +141,10 @@ function Quiz() {
     }
 
     const timeoutId = setTimeout(() => {
-      setTimeLeft((previousTime) => previousTime - 1)
+      setTimeLeft((prev) => prev - 1)
     }, 1000)
 
-    return () => {
-      clearTimeout(timeoutId)
-    }
+    return () => clearTimeout(timeoutId)
   }, [timeLeft, isLoading, error, currentQuestion, selectedAnswer])
 
   const progressPercentage = totalQuestions > 0
@@ -189,18 +152,12 @@ function Quiz() {
     : 0
 
   const handleAnswerClick = (answer) => {
-    if (!currentQuestion) {
-      return
-    }
-
-    if (selectedAnswer !== null) {
-      return
-    }
+    if (!currentQuestion) return
+    if (selectedAnswer !== null) return
 
     setSelectedAnswer(answer)
 
     const isCorrect = answer === currentQuestion.correctAnswer
-
     let nextScore = score
 
     if (isCorrect) {
@@ -212,13 +169,14 @@ function Quiz() {
 
     setTimeout(() => {
       if (!isLastQuestion) {
-        setCurrentQuestionIndex((previousIndex) => previousIndex + 1)
+        setCurrentQuestionIndex((prev) => prev + 1)
       } else {
         navigate('/results', {
           state: {
             score: nextScore,
             total: totalQuestions,
             categoryId,
+            difficulty,
           },
         })
       }
@@ -226,29 +184,20 @@ function Quiz() {
   }
 
   const handleUseJoker = () => {
-    if (!currentQuestion) {
-      return
-    }
-
-    if (hasUsedJoker) {
-      return
-    }
+    if (!currentQuestion || hasUsedJoker) return
 
     const correctAnswer = currentQuestion.correctAnswer
     const incorrectAnswers = currentQuestion.answers.filter(
       (ans) => ans !== correctAnswer,
     )
 
-    if (incorrectAnswers.length === 0) {
-      return
-    }
+    if (incorrectAnswers.length === 0) return
 
     const randomIndex = Math.floor(Math.random() * incorrectAnswers.length)
     const randomIncorrectAnswer = incorrectAnswers[randomIndex]
 
     const reducedAnswers = currentAnswers.filter(
-      (ans) =>
-        ans === correctAnswer || ans === randomIncorrectAnswer,
+      (ans) => ans === correctAnswer || ans === randomIncorrectAnswer,
     )
 
     setCurrentAnswers(reducedAnswers)
@@ -257,8 +206,6 @@ function Quiz() {
 
   return (
     <div className="quiz-page">
-      <Header />
-
       <main className="quiz">
         <h2>Quiz React (catégories, difficulté, minuteur et joker)</h2>
 
@@ -266,7 +213,6 @@ function Quiz() {
           Thème sélectionné : <strong>{categoryLabel}</strong>
         </p>
 
-        {/* Affichage du niveau de difficulté pour donner plus de contexte */}
         {difficulty && (
           <p className="quiz__category">
             Difficulté : <strong>{difficultyLabel}</strong>
@@ -274,15 +220,11 @@ function Quiz() {
         )}
 
         {isLoading && (
-          <p className="quiz__status">
-            Chargement des questions en cours...
-          </p>
+          <p className="quiz__status">Chargement des questions en cours...</p>
         )}
 
         {error && !isLoading && (
-          <p className="quiz__status quiz__status--error">
-            {error}
-          </p>
+          <p className="quiz__status quiz__status--error">{error}</p>
         )}
 
         {!isLoading
@@ -291,7 +233,6 @@ function Quiz() {
           && currentQuestion
           && currentAnswers.length > 0 && (
             <>
-              {/* Bloc progression + minuteur */}
               <div className="quiz__progress-container">
                 <div className="quiz__progress-text">
                   Question {currentQuestionIndex + 1} / {totalQuestions}
@@ -310,10 +251,7 @@ function Quiz() {
                 }`}
               >
                 <p>
-                  Temps restant :{' '}
-                  <strong>{timeLeft}</strong>
-                  {' '}
-                  seconde(s)
+                  Temps restant : <strong>{timeLeft}</strong> seconde(s)
                 </p>
               </div>
 
